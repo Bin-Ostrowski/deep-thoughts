@@ -1,4 +1,6 @@
+const { AuthenticationError } = require("apollo-server-express");
 const { User, Thought } = require("../models");
+const { signToken } = require("../utils/auth");
 
 const resolvers = {
   Query: {
@@ -39,6 +41,41 @@ const resolvers = {
         .select("-__v -password")
         .populate("friends")
         .populate("thoughts");
+    },
+  },
+
+  // add mutation for creating, updating and deleteing
+  Mutation: {
+    // Mongoose User model creates a new user in the
+    //database with whatever is passed in as the args
+    addUser: async (parent, args) => {
+      const user = await User.create(args);
+      // sign a token
+      const token = signToken(user);
+
+      //return an object that combines the token with the user's data
+      return { token, user };
+    },
+    login: async (parent, { email, password }) => {
+      //validate email
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        //dont specify which is incorrect to shield from malicious hackers
+        throw new AuthenticationError("Incorrect credentials");
+      }
+
+      //validate user password
+      const correctPw = await user.isCorrectPassword(password);
+
+      if (!correctPw) {
+        throw new AuthenticationError("Incorrect credentials");
+      }
+
+      //sign a token 
+      const token = signToken(user);
+      //return an object that combines the token with the user's data
+      return { token, user };
     },
   },
 };
