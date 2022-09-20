@@ -4,7 +4,7 @@
 // on how it's used in that situation
 const { gql } = require("apollo-server-express");
 
-// create our typeDefs (tagged template function)
+
 //custom Thought data type
 //include a nested array of reactions.
 
@@ -52,6 +52,7 @@ const typeDefs = gql`
   }
 
   type Query {
+    me: User
     users: [User]
     user(username: String!): User
     thoughts(username: String): [Thought]
@@ -61,6 +62,11 @@ const typeDefs = gql`
   type Mutation {
     login(email: String!, password: String!): Auth
     addUser(username: String!, email: String!, password: String!): Auth
+    addThought(thoughtText: String!): Thought
+    addReaction(thoughtId: ID!, reactionBody: String!): Thought
+    addFriend(friendId: ID!): User
+    
+
   }
 
   type Auth {

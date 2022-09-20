@@ -4,6 +4,21 @@ const { signToken } = require("../utils/auth");
 
 const resolvers = {
   Query: {
+    //JWT read the request headers
+    me: async (parent, args, context) => {
+      // check for the existence of context.user. If no context.user property exists, then
+      // we know that the user isn't authenticated and we can throw an AuthenticationError
+      if (context.user) {
+        const userData = await User.findOne({ _id: context.user._id })
+          .select("-__v -password")
+          .populate("thoughts")
+          .populate("friends");
+
+        return userData;
+      }
+
+      throw new AuthenticationError("Not logged in");
+    },
     //methods get the same name of the query or
     //mutation they are resolvers for
 
@@ -56,6 +71,7 @@ const resolvers = {
       //return an object that combines the token with the user's data
       return { token, user };
     },
+
     login: async (parent, { email, password }) => {
       //validate email
       const user = await User.findOne({ email });
@@ -72,11 +88,65 @@ const resolvers = {
         throw new AuthenticationError("Incorrect credentials");
       }
 
-      //sign a token 
+      //sign a token
       const token = signToken(user);
       //return an object that combines the token with the user's data
       return { token, user };
     },
+
+    addThought: async (parent, args, context) => {
+      if (context.user) {
+        const thought = await Thought.create({
+          ...args,
+          username: context.user.username,
+        });
+
+        await User.findByIdAndUpdate(
+          { _id: context.user._id },
+          { $push: { thoughts: thought._id } },
+          // without the { new: true } flag Mongo would return the original 
+          //document instead of the updated document.
+          { new: true }
+        );
+
+        return thought;
+      }
+
+      throw new AuthenticationError("You need to be logged in!");
+    },
+
+    addReaction: async (parent, { thoughtId, reactionBody }, context) => {
+      if (context.user) {
+        const updatedThought = await Thought.findOneAndUpdate(
+          { _id: thoughtId },
+          //Reactions are stored as arrays on the Thought model, 
+          //so use the Mongo $push operator.
+          { $push: { reactions: { reactionBody, username: context.user.username } } },
+          { new: true, runValidators: true }
+        );
+        
+        return updatedThought;
+      }
+      
+      throw new AuthenticationError('You need to be logged in!');
+    },
+
+    // look for an incoming friendId and add that to the current user's friends array
+    addFriend: async (parent, { friendId }, context) => {
+      if (context.user) {
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: context.user._id },
+          // A user can't be friends with the same person twice, hence using 
+          // $addToSet operator instead of $push to prevent duplicate entries.
+          { $addToSet: { friends: friendId } },
+          { new: true }
+        ).populate('friends');
+
+        return updatedUser;
+      }
+
+      throw new AuthenticationError('You need to be logged in!');
+    }
   },
 };
 
