@@ -42,6 +42,7 @@ module.exports = {
       //be able to request and see all thoughts. 
       //Thus, wrap the verify() method in a try...catch statement to mute the error. 
       //and manually throw an authentication error on the resolver side.
+      // throwing an error in the try block will immediately skip to the catch.
       const { data } = jwt.verify(token, secret, { maxAge: expiration });
       req.user = data;
     } catch {
