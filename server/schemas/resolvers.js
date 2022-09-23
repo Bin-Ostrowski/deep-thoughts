@@ -124,10 +124,10 @@ const resolvers = {
           { $push: { reactions: { reactionBody, username: context.user.username } } },
           { new: true, runValidators: true }
         );
-        
+
         return updatedThought;
       }
-      
+
       throw new AuthenticationError('You need to be logged in!');
     },
 
