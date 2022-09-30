@@ -1,7 +1,7 @@
 # Deep Thoughts 
         
   ## Description
-  Full-stack MERN blog for users to login, store thoughts, reactions, and friends. 
+  A blog for users to login, store thoughts, reactions, and friends. Deep Thoughts is a full-stack MERN app with an Apollo server using GraphQL. 
           
   ## Table of Content
   - [Description](#description)
